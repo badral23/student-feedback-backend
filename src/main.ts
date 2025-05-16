@@ -21,14 +21,13 @@ async function bootstrap() {
     }),
   );
 
-  // Set up Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('Student Feedback System API')
     .setDescription('API documentation for Student Feedback System')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
-  const document = SwaggerModule.createDocument(app, config);
+
   SwaggerModule.setup('api/docs', app, document);
 
   // Use the port provided by Heroku
