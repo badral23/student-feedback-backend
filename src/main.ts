@@ -28,6 +28,10 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
 
+  // Create the document from the config
+  const document = SwaggerModule.createDocument(app, config);
+
+  // Set up the Swagger UI
   SwaggerModule.setup('api/docs', app, document);
 
   // Use the port provided by Heroku

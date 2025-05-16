@@ -9,6 +9,7 @@ import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { PasswordResetToken } from './entities/password-reset.entity';
 
 // src/auth/auth.module.ts
 @Module({
@@ -25,7 +26,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
         },
       }),
     }),
-    TypeOrmModule.forFeature([ResetPasswordDto]),
+    TypeOrmModule.forFeature([PasswordResetToken]),
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy],
