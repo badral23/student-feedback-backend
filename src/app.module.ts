@@ -1,9 +1,29 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { databaseConfig } from './config/database.config';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { FeedbackModule } from './feedback/feedback.module';
+import { CategoriesModule } from './categories/categories.module';
+import { DepartmentsModule } from './departments/departments.module';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
-  imports: [],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRoot(databaseConfig),
+    UsersModule,
+    AuthModule,
+    FeedbackModule,
+    CategoriesModule,
+    DepartmentsModule,
+    CommentsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
