@@ -1,3 +1,4 @@
+// src/feedback/entities/feedback.entity.ts
 import {
   Entity,
   Column,
@@ -9,20 +10,14 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { Category } from '../../categories/entities/category.entity';
 import { Comment } from '../../comments/entities/comment.entity';
 
 export enum FeedbackStatus {
   NEW = 'new',
-  IN_PROGRESS = 'in-progress',
-  RESOLVED = 'resolved',
-  CLOSED = 'closed',
-}
-
-export enum FeedbackPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
+  APPROVED = 'approved',
+  BRANCH_MEETING = 'to-be-submitted-to-branch-meeting',
+  REJECTED = 'rejected',
+  COMPLETED = 'completed',
 }
 
 @Entity('feedback')
@@ -42,20 +37,6 @@ export class Feedback {
 
   @Column()
   userId: string;
-
-  @ManyToOne(() => Category, (category) => category.feedbacks)
-  @JoinColumn({ name: 'categoryId' })
-  category: Category;
-
-  @Column()
-  categoryId: string;
-
-  @Column({
-    type: 'enum',
-    enum: FeedbackPriority,
-    default: FeedbackPriority.MEDIUM,
-  })
-  priority: FeedbackPriority;
 
   @Column({
     type: 'enum',

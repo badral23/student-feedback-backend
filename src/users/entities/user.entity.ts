@@ -1,3 +1,4 @@
+// src/users/entities/user.entity.ts
 import {
   Entity,
   Column,
@@ -11,7 +12,7 @@ import { Feedback } from '../../feedback/entities/feedback.entity';
 
 export enum UserRole {
   STUDENT = 'student',
-  TEACHER = 'teacher',
+  MODERATOR = 'moderator',
   ADMIN = 'admin',
 }
 
@@ -37,11 +38,17 @@ export class User {
   })
   role: UserRole;
 
-  @Column({ nullable: true })
-  department: string;
+  @Column({ nullable: true, unique: true })
+  studentId: string;
+
+  @Column({ default: false })
+  isEmailVerified: boolean;
 
   @Column({ nullable: true })
-  studentId: string;
+  otpToken: string;
+
+  @Column({ nullable: true })
+  otpExpiry: Date;
 
   @Column({ default: true })
   isActive: boolean;

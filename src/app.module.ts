@@ -7,9 +7,8 @@ import { databaseConfig } from './config/database.config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { FeedbackModule } from './feedback/feedback.module';
-import { CategoriesModule } from './categories/categories.module';
-import { DepartmentsModule } from './departments/departments.module';
 import { CommentsModule } from './comments/comments.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -20,9 +19,8 @@ import { CommentsModule } from './comments/comments.module';
     UsersModule,
     AuthModule,
     FeedbackModule,
-    CategoriesModule,
-    DepartmentsModule,
     CommentsModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

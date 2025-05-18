@@ -1,14 +1,15 @@
+// src/auth/dto/verify-otp.dto.ts
 import { IsString, IsNotEmpty, IsEmail } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class LoginDto {
-  @ApiProperty({ example: 'student@must.edu.mn' })
+export class VerifyOtpDto {
+  @ApiProperty({ example: 'B210970304@must.edu.mn' })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '123456' })
   @IsString()
   @IsNotEmpty()
-  password: string;
+  otp: string;
 }

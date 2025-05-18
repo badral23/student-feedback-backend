@@ -1,3 +1,4 @@
+// src/abcdeefk / feedback.service.ts;
 import {
   Injectable,
   NotFoundException,
@@ -10,32 +11,18 @@ import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { UpdateFeedbackDto } from './dto/update-feedback.dto';
 import { FeedbackQueryDto } from './dto/feedback-query.dto';
 import { UserRole } from '../users/entities/user.entity';
-import { Category } from '../categories/entities/category.entity';
 
 @Injectable()
 export class FeedbackService {
   constructor(
     @InjectRepository(Feedback)
     private feedbackRepository: Repository<Feedback>,
-    @InjectRepository(Category)
-    private categoryRepository: Repository<Category>,
   ) {}
 
   async create(
     createFeedbackDto: CreateFeedbackDto,
     user: any,
   ): Promise<Feedback> {
-    // Check if category exists
-    const category = await this.categoryRepository.findOne({
-      where: { id: createFeedbackDto.categoryId },
-    });
-
-    if (!category) {
-      throw new NotFoundException(
-        `Category with ID "${createFeedbackDto.categoryId}" not found`,
-      );
-    }
-
     const feedback = this.feedbackRepository.create({
       ...createFeedbackDto,
       userId: user.userId,
@@ -49,26 +36,40 @@ export class FeedbackService {
   ): Promise<{ data: Feedback[]; total: number }> {
     const {
       status,
-      priority,
-      categoryId,
       userId,
       assignedToId,
       search,
-      page = 1, // Default to page 1
-      limit = 10, // Default to 10 items per page
+      page = 1,
+      limit = 10,
     } = query;
 
     const skip = (page - 1) * limit;
 
-    // Rest of your code remains the same
     const queryBuilder = this.feedbackRepository
       .createQueryBuilder('feedback')
-      .leftJoinAndSelect('feedback.user', 'user')
-      .leftJoinAndSelect('feedback.category', 'category')
-      .leftJoinAndSelect('category.department', 'department');
+      .leftJoinAndSelect('feedback.user', 'user');
 
     // Apply filters
-    // ... your existing filter code ...
+    if (status) {
+      queryBuilder.andWhere('feedback.status = :status', { status });
+    }
+
+    if (userId) {
+      queryBuilder.andWhere('feedback.userId = :userId', { userId });
+    }
+
+    if (assignedToId) {
+      queryBuilder.andWhere('feedback.assignedToId = :assignedToId', {
+        assignedToId,
+      });
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        '(feedback.title ILIKE :search OR feedback.description ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
 
     // Get total count
     const total = await queryBuilder.getCount();
@@ -84,23 +85,17 @@ export class FeedbackService {
   async findOne(id: string, user: any): Promise<Feedback> {
     const feedback = await this.feedbackRepository.findOne({
       where: { id },
-      relations: [
-        'user',
-        'category',
-        'category.department',
-        'comments',
-        'comments.user',
-      ],
+      relations: ['user', 'comments', 'comments.user'],
     });
 
     if (!feedback) {
       throw new NotFoundException(`Feedback with ID "${id}" not found`);
     }
 
-    // Check permissions - only admin, teacher, or the owner can see the feedback
+    // Check permissions - only admin, moderator, or the owner can see the feedback
     if (
       user.role !== UserRole.ADMIN &&
-      user.role !== UserRole.TEACHER &&
+      user.role !== UserRole.MODERATOR &&
       feedback.userId !== user.userId
     ) {
       throw new ForbiddenException(
@@ -118,22 +113,20 @@ export class FeedbackService {
   ): Promise<Feedback> {
     const feedback = await this.findOne(id, user);
 
-    // Check permissions - only admin or teacher can update status and assign
+    // Only admin or moderator can update status
     if (
-      (updateFeedbackDto.status || updateFeedbackDto.assignedToId) &&
+      updateFeedbackDto.status &&
       user.role !== UserRole.ADMIN &&
-      user.role !== UserRole.TEACHER
+      user.role !== UserRole.MODERATOR
     ) {
       throw new ForbiddenException(
-        'You do not have permission to update status or assign feedback',
+        'Only moderators and admins can update feedback status',
       );
     }
 
-    // Check if the user is the owner of the feedback
+    // Only the owner can update content (title, description)
     if (
-      (updateFeedbackDto.title ||
-        updateFeedbackDto.description ||
-        updateFeedbackDto.categoryId) &&
+      (updateFeedbackDto.title || updateFeedbackDto.description) &&
       user.role !== UserRole.ADMIN &&
       feedback.userId !== user.userId
     ) {
@@ -142,12 +135,12 @@ export class FeedbackService {
       );
     }
 
-    // If status is changed to RESOLVED, set resolvedAt date
+    // If status is changed to COMPLETED, set resolvedAt date
     if (
-      updateFeedbackDto.status === FeedbackStatus.RESOLVED &&
-      feedback.status !== FeedbackStatus.RESOLVED
+      updateFeedbackDto.status === FeedbackStatus.COMPLETED &&
+      feedback.status !== FeedbackStatus.COMPLETED
     ) {
-      updateFeedbackDto.resolvedAt = new Date();
+      feedback.resolvedAt = new Date();
     }
 
     Object.assign(feedback, updateFeedbackDto);
@@ -170,23 +163,6 @@ export class FeedbackService {
       .groupBy('feedback.status')
       .getRawMany();
 
-    // Get priority counts
-    const priorityCounts = await this.feedbackRepository
-      .createQueryBuilder('feedback')
-      .select('feedback.priority', 'priority')
-      .addSelect('COUNT(feedback.id)', 'count')
-      .groupBy('feedback.priority')
-      .getRawMany();
-
-    // Get category counts
-    const categoryCounts = await this.feedbackRepository
-      .createQueryBuilder('feedback')
-      .leftJoin('feedback.category', 'category')
-      .select('category.name', 'categoryName')
-      .addSelect('COUNT(feedback.id)', 'count')
-      .groupBy('category.name')
-      .getRawMany();
-
     // Get feedback count by day for the last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -202,11 +178,9 @@ export class FeedbackService {
 
     return {
       statusCounts,
-      priorityCounts,
-      categoryCounts,
       feedbackByDay,
       totalFeedback: await this.feedbackRepository.count(),
-      unresolvedFeedback: await this.feedbackRepository.count({
+      pendingFeedback: await this.feedbackRepository.count({
         where: { status: FeedbackStatus.NEW },
       }),
     };

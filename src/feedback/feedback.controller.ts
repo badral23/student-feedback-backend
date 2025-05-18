@@ -1,3 +1,4 @@
+// src/feedback/feedback.controller.ts
 import {
   Controller,
   Get,
@@ -78,7 +79,7 @@ export class FeedbackController {
   }
 
   @Get('statistics/summary')
-  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Get feedback statistics' })
   getStatistics() {

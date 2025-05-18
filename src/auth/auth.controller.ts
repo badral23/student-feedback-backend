@@ -1,3 +1,4 @@
+// src/auth/auth.controller.ts
 import {
   Controller,
   Post,
@@ -10,18 +11,21 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { UsersService } from '../users/users.service';
-import { CreateUserDto } from '../users/dto/create-user.dto';
-import { ForgotPasswordDto } from '../auth/dto/forgot-password.dto';
+import { RegisterDto } from './dto/register.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { Roles } from './decorators/roles.decorator';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { UserRole } from '../users/entities/user.entity';
+import { CreateModeratorDto } from './dto/create-moderator.dto';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private authService: AuthService,
-    private usersService: UsersService,
-  ) {}
+  constructor(private authService: AuthService) {}
 
   @UseGuards(AuthGuard('local'))
   @Post('login')
@@ -33,13 +37,29 @@ export class AuthController {
   }
 
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User successfully created' })
+  @ApiOperation({ summary: 'Register a new student account' })
+  @ApiResponse({
+    status: 201,
+    description: 'Registration successful, OTP sent',
+  })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  async register(@Body(ValidationPipe) createUserDto: CreateUserDto) {
-    const user = await this.usersService.create(createUserDto);
-    const { password, ...result } = user;
-    return result;
+  async register(@Body(ValidationPipe) registerDto: RegisterDto) {
+    return this.authService.registerStudent(registerDto);
+  }
+
+  @Post('verify-otp')
+  @ApiOperation({ summary: 'Verify account with OTP' })
+  @ApiResponse({ status: 200, description: 'Email verification successful' })
+  @ApiResponse({ status: 400, description: 'Invalid OTP' })
+  async verifyOTP(@Body(ValidationPipe) verifyOtpDto: VerifyOtpDto) {
+    return this.authService.verifyOTP(verifyOtpDto);
+  }
+
+  @Post('resend-otp')
+  @ApiOperation({ summary: 'Resend OTP to email' })
+  @ApiResponse({ status: 200, description: 'OTP sent successfully' })
+  async resendOTP(@Body('email') email: string) {
+    return this.authService.resendOTP(email);
   }
 
   @Post('forgot-password')
@@ -63,5 +83,17 @@ export class AuthController {
       resetPasswordDto.newPassword,
     );
     return { message: 'Password has been reset successfully' };
+  }
+
+  @Post('create-moderator')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Create a new moderator account (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Moderator created successfully' })
+  async createModerator(
+    @Body(ValidationPipe) createModeratorDto: CreateModeratorDto,
+    @CurrentUser() user,
+  ) {
+    return this.authService.createModerator(createModeratorDto, user);
   }
 }

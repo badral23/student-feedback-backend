@@ -1,3 +1,4 @@
+// src/comments/comments.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -37,10 +38,10 @@ export class CommentsService {
     }
 
     // Check if user has permission to comment
-    // Only admin, teacher, or the owner of the feedback can comment
+    // Only admin, moderator, or the owner of the feedback can comment
     if (
       user.role !== UserRole.ADMIN &&
-      user.role !== UserRole.TEACHER &&
+      user.role !== UserRole.MODERATOR &&
       feedback.userId !== user.userId
     ) {
       throw new ForbiddenException(
@@ -48,14 +49,14 @@ export class CommentsService {
       );
     }
 
-    // Only admin or teacher can create internal comments
+    // Only admin or moderator can create internal comments
     if (
       createCommentDto.isInternal &&
       user.role !== UserRole.ADMIN &&
-      user.role !== UserRole.TEACHER
+      user.role !== UserRole.MODERATOR
     ) {
       throw new ForbiddenException(
-        'Only admin or teacher can create internal comments',
+        'Only admin or moderator can create internal comments',
       );
     }
 
@@ -79,10 +80,10 @@ export class CommentsService {
     }
 
     // Check if user has permission to view comments
-    // Only admin, teacher, or the owner of the feedback can view comments
+    // Only admin, moderator, or the owner of the feedback can view comments
     if (
       user.role !== UserRole.ADMIN &&
-      user.role !== UserRole.TEACHER &&
+      user.role !== UserRole.MODERATOR &&
       feedback.userId !== user.userId
     ) {
       throw new ForbiddenException(
@@ -96,8 +97,8 @@ export class CommentsService {
       .where('comment.feedbackId = :feedbackId', { feedbackId })
       .orderBy('comment.createdAt', 'ASC');
 
-    // If not admin or teacher, filter out internal comments
-    if (user.role !== UserRole.ADMIN && user.role !== UserRole.TEACHER) {
+    // If not admin or moderator, filter out internal comments
+    if (user.role !== UserRole.ADMIN && user.role !== UserRole.MODERATOR) {
       queryBuilder.andWhere('comment.isInternal = :isInternal', {
         isInternal: false,
       });
@@ -117,10 +118,10 @@ export class CommentsService {
     }
 
     // Check if user has permission to view this comment
-    // Only admin, teacher, or the owner of the feedback can view comment
+    // Only admin, moderator, or the owner of the feedback can view comment
     if (
       user.role !== UserRole.ADMIN &&
-      user.role !== UserRole.TEACHER &&
+      user.role !== UserRole.MODERATOR &&
       comment.feedback.userId !== user.userId
     ) {
       throw new ForbiddenException(
@@ -128,11 +129,11 @@ export class CommentsService {
       );
     }
 
-    // Check if comment is internal and user is not admin or teacher
+    // Check if comment is internal and user is not admin or moderator
     if (
       comment.isInternal &&
       user.role !== UserRole.ADMIN &&
-      user.role !== UserRole.TEACHER
+      user.role !== UserRole.MODERATOR
     ) {
       throw new ForbiddenException(
         'You do not have permission to view internal comments',
@@ -160,10 +161,10 @@ export class CommentsService {
       updateCommentDto.isInternal !== undefined &&
       updateCommentDto.isInternal !== comment.isInternal &&
       user.role !== UserRole.ADMIN &&
-      user.role !== UserRole.TEACHER
+      user.role !== UserRole.MODERATOR
     ) {
       throw new ForbiddenException(
-        'Only admin or teacher can change internal flag',
+        'Only admin or moderator can change internal flag',
       );
     }
 

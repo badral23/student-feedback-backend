@@ -1,3 +1,4 @@
+// src/users/dto/create-user.dto.ts
 import {
   IsString,
   IsEmail,
@@ -5,6 +6,7 @@ import {
   MinLength,
   IsEnum,
   IsOptional,
+  IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '../entities/user.entity';
@@ -31,13 +33,22 @@ export class CreateUserDto {
   @IsOptional()
   role?: UserRole;
 
-  @ApiPropertyOptional({ example: 'Computer Science' })
-  @IsString()
-  @IsOptional()
-  department?: string;
-
-  @ApiPropertyOptional({ example: 'ST12345' })
+  @ApiPropertyOptional({ example: 'B210970304' })
   @IsString()
   @IsOptional()
   studentId?: string;
+
+  @ApiPropertyOptional({ default: false })
+  @IsBoolean()
+  @IsOptional()
+  isEmailVerified?: boolean;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  otpToken?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  otpExpiry?: Date;
 }
