@@ -71,9 +71,7 @@ export class FeedbackController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR) // Updated to allow both admin and moderator
-  @UseGuards(RolesGuard)
-  @ApiOperation({ summary: 'Delete feedback (Admin and Moderator only)' })
+  @ApiOperation({ summary: 'Delete feedback (Admin, Moderator, or Owner)' })
   @ApiResponse({ status: 200, description: 'Feedback deleted successfully' })
   remove(@Param('id') id: string, @CurrentUser() user) {
     return this.feedbackService.remove(id, user);
