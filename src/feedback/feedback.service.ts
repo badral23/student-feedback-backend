@@ -161,14 +161,10 @@ export class FeedbackService {
     }
 
     // Check if user has permission to delete this feedback
-    // Allow admin, moderator, or the owner of the feedback
-    if (
-      user.role !== UserRole.ADMIN &&
-      user.role !== UserRole.MODERATOR &&
-      feedback.userId !== user.userId
-    ) {
+    // Only allow admin or the owner of the feedback
+    if (user.role !== UserRole.ADMIN && feedback.userId !== user.userId) {
       throw new ForbiddenException(
-        'You do not have permission to delete this feedback',
+        'Only administrators and feedback owners can delete feedback',
       );
     }
 

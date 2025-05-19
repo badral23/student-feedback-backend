@@ -71,7 +71,7 @@ export class FeedbackController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete feedback (Admin, Moderator, or Owner)' })
+  @ApiOperation({ summary: 'Delete feedback (Admin or Owner only)' })
   @ApiResponse({ status: 200, description: 'Feedback deleted successfully' })
   remove(@Param('id') id: string, @CurrentUser() user) {
     return this.feedbackService.remove(id, user);
