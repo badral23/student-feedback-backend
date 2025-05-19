@@ -150,30 +150,62 @@ export class FeedbackService {
     id: string,
     user: any,
   ): Promise<{ message: string; id: string }> {
-    // First find the feedback to verify it exists
-    const feedback = await this.feedbackRepository.findOne({
-      where: { id },
-      relations: ['user'],
-    });
+    try {
+      // First find the feedback to verify it exists
+      const feedback = await this.feedbackRepository.findOne({
+        where: { id },
+        relations: ['user', 'comments'],
+      });
 
-    if (!feedback) {
-      throw new NotFoundException(`Feedback with ID "${id}" not found`);
-    }
+      if (!feedback) {
+        throw new NotFoundException(`Feedback with ID "${id}" not found`);
+      }
 
-    // Check if user has permission to delete this feedback
-    // Only allow admin or the owner of the feedback
-    if (user.role !== UserRole.ADMIN && feedback.userId !== user.userId) {
-      throw new ForbiddenException(
-        'Only administrators and feedback owners can delete feedback',
+      // Check if user has permission to delete this feedback
+      // Only allow admin or the owner of the feedback
+      if (user.role !== UserRole.ADMIN && feedback.userId !== user.userId) {
+        throw new ForbiddenException(
+          'Only administrators and feedback owners can delete feedback',
+        );
+      }
+
+      // If we're here, user has permission. Delete any related comments first
+      // This assumes comments have a foreign key constraint
+      if (feedback.comments && feedback.comments.length > 0) {
+        await this.feedbackRepository.manager.getRepository('comments').delete({
+          feedbackId: id,
+        });
+      }
+
+      // Now delete the feedback itself
+      const result = await this.feedbackRepository.delete(id);
+
+      if (result.affected === 0) {
+        throw new Error(`Failed to delete feedback with ID "${id}"`);
+      }
+
+      return {
+        message: 'Feedback deleted successfully',
+        id: id,
+      };
+    } catch (error) {
+      // Provide more detailed error information
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
+        throw error;
+      }
+
+      // Log the detailed error for debugging
+      console.error('Error deleting feedback:', error);
+
+      throw new Error(
+        `Could not delete feedback. Reason: ${
+          error.message || 'Unknown error'
+        }`,
       );
     }
-
-    await this.feedbackRepository.delete(id);
-
-    return {
-      message: 'Feedback deleted successfully',
-      id: id,
-    };
   }
 
   async getStatistics(): Promise<any> {
