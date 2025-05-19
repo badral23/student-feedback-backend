@@ -147,11 +147,30 @@ export class FeedbackService {
     return this.feedbackRepository.save(feedback);
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.feedbackRepository.delete(id);
-    if (result.affected === 0) {
+  async remove(
+    id: string,
+    user: any,
+  ): Promise<{ message: string; id: string }> {
+    // First find the feedback to verify it exists
+    const feedback = await this.feedbackRepository.findOne({ where: { id } });
+
+    if (!feedback) {
       throw new NotFoundException(`Feedback with ID "${id}" not found`);
     }
+
+    // Check if user has permission to delete this feedback
+    if (user.role !== UserRole.ADMIN && user.role !== UserRole.MODERATOR) {
+      throw new ForbiddenException(
+        'Only administrators and moderators can delete feedback',
+      );
+    }
+
+    await this.feedbackRepository.delete(id);
+
+    return {
+      message: 'Feedback deleted successfully',
+      id: id,
+    };
   }
 
   async getStatistics(): Promise<any> {
