@@ -78,7 +78,7 @@ export class FeedbackController {
   }
 
   @Get('statistics/summary')
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.STUDENT)
   @UseGuards(RolesGuard)
   @ApiOperation({ summary: 'Get feedback statistics' })
   getStatistics() {

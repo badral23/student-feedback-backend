@@ -146,6 +146,7 @@ export class FeedbackService {
     Object.assign(feedback, updateFeedbackDto);
     return this.feedbackRepository.save(feedback);
   }
+
   async remove(
     id: string,
     user: any,
