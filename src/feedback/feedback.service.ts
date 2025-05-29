@@ -218,26 +218,20 @@ export class FeedbackService {
       .groupBy('feedback.status')
       .getRawMany();
 
-    // Get feedback count by day for the last 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Transform statusCounts into an object for easier access
+    const statusMap = statusCounts.reduce((acc, item) => {
+      acc[item.status] = parseInt(item.count);
+      return acc;
+    }, {});
 
-    const feedbackByDay = await this.feedbackRepository
-      .createQueryBuilder('feedback')
-      .select("DATE_TRUNC('day', feedback.createdAt)", 'date')
-      .addSelect('COUNT(feedback.id)', 'count')
-      .where('feedback.createdAt >= :thirtyDaysAgo', { thirtyDaysAgo })
-      .groupBy("DATE_TRUNC('day', feedback.createdAt)")
-      .orderBy("DATE_TRUNC('day', feedback.createdAt)", 'ASC')
-      .getRawMany();
+    // Get total feedback count
+    const total = await this.feedbackRepository.count();
 
     return {
-      statusCounts,
-      feedbackByDay,
-      totalFeedback: await this.feedbackRepository.count(),
-      pendingFeedback: await this.feedbackRepository.count({
-        where: { status: FeedbackStatus.NEW },
-      }),
+      total,
+      new: statusMap[FeedbackStatus.NEW] || 0,
+      completed: statusMap[FeedbackStatus.COMPLETED] || 0,
+      rejected: statusMap[FeedbackStatus.REJECTED] || 0,
     };
   }
 }
